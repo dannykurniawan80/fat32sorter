@@ -528,14 +528,28 @@ begin
       begin
         for i := 0 to Items.Count - 1 do
           if Items[i].Selected then
-          begin
-            MovedItemList.Add(Pointer(i));
-            Inc(SelectionCount);
-          end;
+            with FileEntries.Items[i] do
+              if (not (IsDirectory and ((FileName = '.') or (FileName = '..')))) and (not IsVolume) then  // Prevent moving Volume, '.', and '..' entries...
+              begin
+                MovedItemList.Add(Pointer(i));
+                Inc(SelectionCount);
+              end;
 
         DropItem := GetItemAt(X, Y);
         if DropItem <> nil then
-          DropItemIndex := DropItem.Index
+        begin
+          DropItemIndex := DropItem.Index;
+
+          // If user dropped over Volume, '.', or '..' entries, force it to the next index,
+          // since Volume, '.', and '..' must be the first item in directory...
+          if DropItemIndex <= 1 then
+            with FileEntries.Items[DropItemIndex] do
+              if IsVolume then
+                DropItemIndex := DropItemIndex + 1
+              else if IsDirectory then
+                if ((FileName = '.') or (FileName = '..')) then
+                  DropItemIndex := 2;
+        end
         else
           DropItemIndex := FileEntries.Count - 1;
 
