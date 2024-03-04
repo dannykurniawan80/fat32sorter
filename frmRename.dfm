@@ -11,6 +11,7 @@ object RenameForm: TRenameForm
   Font.Height = -12
   Font.Name = 'Segoe UI'
   Font.Style = []
+  OldCreateOrder = True
   Position = poMainFormCenter
   OnCloseQuery = FormCloseQuery
   OnCreate = FormCreate
@@ -18,6 +19,7 @@ object RenameForm: TRenameForm
   DesignSize = (
     784
     561)
+  PixelsPerInch = 96
   TextHeight = 15
   object gbOptions: TGroupBox
     Left = 8
@@ -104,10 +106,10 @@ object RenameForm: TRenameForm
       Width = 56
       Height = 24
       Enabled = False
-      MaxValue = 0
+      MaxValue = 999
       MinValue = 1
       TabOrder = 5
-      Value = 0
+      Value = 2
     end
   end
   object lvFolderList: TListView
