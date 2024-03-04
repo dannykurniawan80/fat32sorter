@@ -373,31 +373,31 @@ end;
 
 function TID3v11.Title: string;
 begin
-  Result := GetID3v1String(_Title, Length(_Title));
+  Result := string(GetID3v1String(_Title, Length(_Title)));
 end;
 
 function TID3v11.Artist: string;
 begin
-  Result := GetID3v1String(_Artist, Length(_Artist));
+  Result := string(GetID3v1String(_Artist, Length(_Artist)));
 end;
 
 function TID3v11.Album: string;
 begin
-  Result := GetID3v1String(_Album, Length(_Album));
+  Result := string(GetID3v1String(_Album, Length(_Album)));
 end;
 
 function TID3v11.Year: Integer;
 var
   Code: Integer;
 begin
-  Val(GetID3v1String(_Year, 4), Result, Code);
+  Val(string(GetID3v1String(_Year, 4)), Result, Code);
   if Code > 0 then
     Result := 0;
 end;
 
 function TID3v11.Comment: string;
 begin
-  Result := GetID3v1String(_Comment, Length(_Comment));
+  Result := string(GetID3v1String(_Comment, Length(_Comment)));
 end;
 
 function TID3v11.GenreAsString: string;

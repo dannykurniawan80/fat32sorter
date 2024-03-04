@@ -2,8 +2,8 @@ object MainForm: TMainForm
   Left = 0
   Top = 0
   Caption = 'MainForm'
-  ClientHeight = 647
-  ClientWidth = 1038
+  ClientHeight = 661
+  ClientWidth = 984
   Color = clBtnFace
   DoubleBuffered = True
   Font.Charset = DEFAULT_CHARSET
@@ -11,38 +11,52 @@ object MainForm: TMainForm
   Font.Height = -11
   Font.Name = 'Tahoma'
   Font.Style = []
-  OldCreateOrder = False
+  OnCloseQuery = FormCloseQuery
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   DesignSize = (
-    1038
-    647)
-  PixelsPerInch = 96
+    984
+    661)
   TextHeight = 13
+  object lblDrive: TLabel
+    Left = 8
+    Top = 19
+    Width = 29
+    Height = 13
+    Caption = 'Drive:'
+  end
+  object lblSort: TLabel
+    Left = 472
+    Top = 19
+    Width = 24
+    Height = 13
+    Caption = 'Sort:'
+    FocusControl = cbbQuickSortList
+  end
   object btnRefreshDriveList: TButton
-    Left = 239
-    Top = 8
+    Left = 355
+    Top = 14
     Width = 75
     Height = 25
     Caption = 'Refresh'
-    TabOrder = 0
+    TabOrder = 2
     OnClick = btnRefreshDriveListClick
   end
   object cbbDriveList: TComboBox
-    Left = 8
-    Top = 8
+    Left = 43
+    Top = 16
     Width = 225
     Height = 22
     Style = csOwnerDrawFixed
-    TabOrder = 1
+    TabOrder = 0
     OnChange = cbbDriveListChange
     OnDrawItem = cbbDriveListDrawItem
   end
   object lvFolderList: TListView
     Left = 8
-    Top = 39
-    Width = 1022
-    Height = 569
+    Top = 56
+    Width = 968
+    Height = 566
     Anchors = [akLeft, akTop, akRight, akBottom]
     Columns = <
       item
@@ -51,7 +65,7 @@ object MainForm: TMainForm
       end
       item
         Caption = 'Date Modified'
-        Width = 150
+        Width = 120
       end
       item
         Caption = 'Type'
@@ -90,39 +104,86 @@ object MainForm: TMainForm
     OwnerData = True
     ReadOnly = True
     RowSelect = True
-    TabOrder = 2
+    TabOrder = 6
     ViewStyle = vsReport
     OnData = lvFolderListData
     OnDblClick = lvFolderListDblClick
     OnDragDrop = lvFolderListDragDrop
     OnDragOver = lvFolderListDragOver
-    ExplicitWidth = 894
   end
   object btnSort: TButton
-    Left = 703
-    Top = 8
-    Width = 66
+    Left = 735
+    Top = 14
+    Width = 74
     Height = 25
-    Caption = 'Sort'
-    TabOrder = 3
+    Caption = '&Sort'
+    DropDownMenu = pmSort
+    Style = bsSplitButton
+    TabOrder = 4
     OnClick = btnSortClick
   end
-  object cbbSortFuncList: TComboBox
-    Left = 360
-    Top = 8
-    Width = 337
+  object cbbQuickSortList: TComboBox
+    Left = 502
+    Top = 16
+    Width = 227
     Height = 21
     Style = csDropDownList
-    TabOrder = 4
+    TabOrder = 3
   end
-  object Button1: TButton
-    Left = 8
-    Top = 614
+  object btnWriteToDisk: TButton
+    Left = 89
+    Top = 628
     Width = 97
     Height = 25
     Anchors = [akLeft, akBottom]
     Caption = 'Write to Disk'
+    TabOrder = 8
+    OnClick = btnWriteToDiskClick
+  end
+  object btnOpenCloseDrive: TButton
+    Left = 274
+    Top = 14
+    Width = 75
+    Height = 25
+    Caption = '&Open'
+    Enabled = False
+    TabOrder = 1
+    OnClick = btnOpenCloseDriveClick
+  end
+  object btnRename: TButton
+    Left = 839
+    Top = 14
+    Width = 106
+    Height = 25
+    Caption = 'Rename Files...'
     TabOrder = 5
-    OnClick = Button1Click
+    OnClick = btnRenameClick
+  end
+  object btnReload: TButton
+    Left = 8
+    Top = 628
+    Width = 75
+    Height = 25
+    Anchors = [akLeft, akBottom]
+    Caption = 'Reload'
+    TabOrder = 7
+    OnClick = btnReloadClick
+  end
+  object btnQuit: TButton
+    Left = 901
+    Top = 628
+    Width = 75
+    Height = 25
+    Caption = '&Quit'
+    TabOrder = 9
+    OnClick = btnQuitClick
+  end
+  object pmSort: TPopupMenu
+    Left = 776
+    Top = 48
+    object AdvancedSort1: TMenuItem
+      Caption = '&Advanced Sort...'
+      OnClick = AdvancedSort1Click
+    end
   end
 end

@@ -17,11 +17,11 @@ const
   END_OF_CLUSTER_CHAIN = $0FFFFFFF;  // According to Microsoft, cluster number is only 28 bits long, the upper 4 bits are reserved.
 
 type
-  TLFNEntries = array of TFAT32LFNEntry;
+  TFAT32LFNEntries = array of TFAT32LFNEntry;
 
-  TFileEntry = class
+  TFAT32EntryItem = class
   private
-    LFNEntries: TLFNEntries;
+    LFNEntries: TFAT32LFNEntries;
     DirEntry: TFAT32DirEntry;
 
     FLongFileName: string;
@@ -36,14 +36,14 @@ type
     function GetFirstClusterNum: Cardinal;
 
   protected
-    constructor Create(ADirEntry: TFAT32DirEntry; ALFNEntries: TLFNEntries);
+    constructor Create(ADirEntry: TFAT32DirEntry; ALFNEntries: TFAT32LFNEntries);
 
   public
     function IsDirectory: Boolean;
     function IsFile: Boolean;
     function IsVolume: Boolean;
 
-    property _LFNEntries: TLFNEntries read LFNEntries;
+    property _LFNEntries: TFAT32LFNEntries read LFNEntries;
     property _DirEntry: TFAT32DirEntry read DirEntry;
 
     property FileName: string read GetFileName;
@@ -57,21 +57,21 @@ type
     property FirstClusterNum: Cardinal read GetFirstClusterNum;
   end;
 
-  TFileEntryCompare = function(Item1, Item2: TFileEntry): Integer;
-  TFileEntryCompareFunc = reference to function(Item1, Item2: TFileEntry): Integer;
+  TFileEntryCompare = function(Item1, Item2: TFAT32EntryItem): Integer;
+  TFileEntryCompareFunc = reference to function(Item1, Item2: TFAT32EntryItem): Integer;
 
   TFileEntries = class
   private
     FItems: TList;
     FClusterNum: Cardinal;
     FPathNode: string;
-    function GetFileEntry(Idx: Integer): TFileEntry;
+    function GetFileEntry(Idx: Integer): TFAT32EntryItem;
     function GetCount: Integer;
   public
     constructor Create(ClusterNum: Cardinal; PathNode: string);
     destructor Destroy; override;
 
-    function AddFileEntry(DirEntry: TFAT32DirEntry; LFNEntries: TLFNEntries): Integer;
+    function AddFileEntry(DirEntry: TFAT32DirEntry; LFNEntries: TFAT32LFNEntries): Integer;
     procedure DeleteFileEntry(Index: Integer);
 
     property ClusterNum: Cardinal read FClusterNum;
@@ -80,16 +80,19 @@ type
     procedure Sort(Compare: TFileEntryCompare); overload;
     procedure Sort(CompareFunc: TFileEntryCompareFunc); overload;
     procedure Move(CurIndex, NewIndex: Integer); overload;
-    procedure Move(Item: TFileEntry; NewIndex: Integer); overload;
+    procedure Move(Item: TFAT32EntryItem; NewIndex: Integer); overload;
 
     function IndexOf(const FileName: string): Integer;
 
     property Count: Integer read GetCount;
-    property Items[Idx: Integer]: TFileEntry read GetFileEntry;
+    property Items[Idx: Integer]: TFAT32EntryItem read GetFileEntry;
   end;
 
 
-  TFAT32 = class
+  TFAT32EntryProc = procedure(FileEntry: TFAT32EntryItem) of object;
+
+
+  TFAT32Reader = class
   private
     DiskHandle: THandle;
     FAT32BeginSector: Cardinal;
@@ -119,11 +122,13 @@ type
     constructor Create(Drive: string; ReadOnly: Boolean);
     destructor Destroy; override;
 
-    function ReadDirEntry(StartClusterNum: Cardinal; PathNode: string = ''): TFileEntries;
-    function ReadRootDirEntry: TFileEntries;
+    procedure ReadDirEntry(StartClusterNum: Cardinal; FAT32EntryProc: TFAT32EntryProc); overload;
+    procedure ReadDirEntry(DirEntry: TFAT32EntryItem; FAT32EntryProc: TFAT32EntryProc); overload;
+    procedure ReadRootDir(FAT32EntryProc: TFAT32EntryProc);
 
-    function WriteDirEntry(FileEntries: TFileEntries): Boolean;
-    function WriteRootDirEntry(FileEntries: TFileEntries): Boolean;
+    function WriteDirEntry(StartClusterNum: Cardinal; Entries: array of TFAT32EntryItem): Boolean; overload;
+    function WriteDirEntry(ParentDir: TFAT32EntryItem; Entries: array of TFAT32EntryItem): Boolean; overload;
+    function WriteRootDirEntry(Entries: array of TFAT32EntryItem): Boolean;
 
     property Drive: string read FDrive;
     property FAT32Volume: TFAT32Volume read GetFAT32Volume;
@@ -138,9 +143,8 @@ uses
 function GetErrorMessage(ErrCode: Cardinal): string;
 var
   MessagePtr: PWideChar;
-  MessageSize: Cardinal;
 begin
-  MessageSize := FormatMessage(
+  FormatMessage(
       FORMAT_MESSAGE_ALLOCATE_BUFFER or FORMAT_MESSAGE_FROM_SYSTEM or FORMAT_MESSAGE_IGNORE_INSERTS,
       nil, ErrCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), @MessagePtr, 0, nil
     );
@@ -150,7 +154,7 @@ end;
 
 { TFileEntry }
 
-constructor TFileEntry.Create(ADirEntry: TFAT32DirEntry; ALFNEntries: TLFNEntries);
+constructor TFAT32EntryItem.Create(ADirEntry: TFAT32DirEntry; ALFNEntries: TFAT32LFNEntries);
 var
   i: Integer;
 begin
@@ -178,17 +182,17 @@ begin
   FWriteDateTime := DirEntry.DIR_WriteDateTime;
 end;
 
-function TFileEntry.GetAttribute: Integer;
+function TFAT32EntryItem.GetAttribute: Integer;
 begin
   Result := DirEntry.DIR_Attr;
 end;
 
-function TFileEntry.GetFileName: string;
+function TFAT32EntryItem.GetFileName: string;
 begin
   Result := FLongFileName;
 end;
 
-function TFileEntry.GetShortFileName: string;
+function TFAT32EntryItem.GetShortFileName: string;
 begin
   if DirEntry.DIR_Attr and 8 = 8 then
     Result := DirEntry.DIR_Name_Volume
@@ -196,27 +200,27 @@ begin
     Result := DirEntry.DIR_Name_Format83;
 end;
 
-function TFileEntry.GetSize: Cardinal;
+function TFAT32EntryItem.GetSize: Cardinal;
 begin
   Result := DirEntry.DIR_FileSize;
 end;
 
-function TFileEntry.IsDirectory: Boolean;
+function TFAT32EntryItem.IsDirectory: Boolean;
 begin
   Result := DirEntry.DIR_Attr and faDirectory <> 0;
 end;
 
-function TFileEntry.IsFile: Boolean;
+function TFAT32EntryItem.IsFile: Boolean;
 begin
   Result := DirEntry.DIR_Attr and faDirectory = 0;
 end;
 
-function TFileEntry.IsVolume: Boolean;
+function TFAT32EntryItem.IsVolume: Boolean;
 begin
   Result := DirEntry.DIR_Attr and 8 = 8;
 end;
 
-function TFileEntry.GetFirstClusterNum: Cardinal;
+function TFAT32EntryItem.GetFirstClusterNum: Cardinal;
 begin
   Result := DIREntry.DIR_FirstCluster;
 end;
@@ -224,7 +228,7 @@ end;
 
 { TFAT32 }
 
-constructor TFAT32.Create(Drive: string; ReadOnly: Boolean);
+constructor TFAT32Reader.Create(Drive: string; ReadOnly: Boolean);
 var
   FName: string;
   Access: Cardinal;
@@ -276,23 +280,23 @@ begin
   end;
 end;
 
-destructor TFAT32.Destroy;
+destructor TFAT32Reader.Destroy;
 begin
   CloseDisk;
 end;
 
-procedure TFAT32.CloseDisk;
+procedure TFAT32Reader.CloseDisk;
 begin
   CloseHandle(DiskHandle);
   DiskHandle := INVALID_HANDLE_VALUE;
 end;
 
-function TFAT32.ClusterToSector(ClusterNum: Cardinal): Cardinal;
+function TFAT32Reader.ClusterToSector(ClusterNum: Cardinal): Cardinal;
 begin
   Result := ClusterBeginSector + ((ClusterNum - 2) * FFAT32Volume.BPB_SecPerClus);
 end;
 
-function TFAT32.ReadSector(SectorNum: Cardinal; var Buff; NumOfSectors: Cardinal): Boolean;
+function TFAT32Reader.ReadSector(SectorNum: Cardinal; var Buff; NumOfSectors: Cardinal): Boolean;
 var
   BytesOffset: UInt64;
   Overlapped: TOverlapped;
@@ -313,16 +317,18 @@ begin
   else
   begin
     ErrCode := GetLastError;
+    {$IFDEF DEBUG}
     OutputDebugString(PChar(Format('READ Sector ERROR: [%d] %s', [ErrCode, GetErrorMessage(ErrCode)])));
+    {$ENDIF}
   end;
 end;
 
-function TFAT32.ReadCluster(ClusterNum: Cardinal; var Buff; NumOfClusters: Cardinal = 1): Boolean;
+function TFAT32Reader.ReadCluster(ClusterNum: Cardinal; var Buff; NumOfClusters: Cardinal = 1): Boolean;
 begin
   Result := ReadSector(ClusterToSector(ClusterNum), Buff, NumOfClusters * FFAT32Volume.BPB_SecPerClus);
 end;
 
-function TFAT32.WriteSector(SectorNum: Cardinal; var Buff; NumOfSectors: Cardinal): Boolean;
+function TFAT32Reader.WriteSector(SectorNum: Cardinal; var Buff; NumOfSectors: Cardinal): Boolean;
 var
   BytesOffset: UInt64;
   Overlapped: TOverlapped;
@@ -344,16 +350,18 @@ begin
   else
   begin
     ErrCode := GetLastError;
+    {$IFDEF DEBUG}
     OutputDebugString(PChar(Format('WRITE Sector ERROR: [%d] %s', [ErrCode, GetErrorMessage(ErrCode)])));
+    {$ENDIF}
   end;
 end;
 
-function TFAT32.WriteCluster(ClusterNum: Cardinal; var Buff; NumOfClusters: Cardinal): Boolean;
+function TFAT32Reader.WriteCluster(ClusterNum: Cardinal; var Buff; NumOfClusters: Cardinal): Boolean;
 begin
   Result := WriteSector(ClusterToSector(ClusterNum), Buff, NumOfClusters * FFAT32Volume.BPB_SecPerClus);
 end;
 
-function TFAT32.GetNextClusterNum(ClusterNum: Cardinal): Cardinal;
+function TFAT32Reader.GetNextClusterNum(ClusterNum: Cardinal): Cardinal;
 var
   ClusterEntryByteOffset: Cardinal;
   ClusterSector: Cardinal;
@@ -373,7 +381,7 @@ begin
 end;
 
 
-function TFAT32.ReadDirEntry(StartClusterNum: Cardinal; PathNode: string): TFileEntries;
+procedure TFAT32Reader.ReadDirEntry(StartClusterNum: Cardinal; FAT32EntryProc: TFAT32EntryProc);
 var
   i: Integer;
   ClusterNum: Cardinal;
@@ -383,21 +391,22 @@ var
 
   HasLongName: Boolean;
   LFNEntryIdx: Integer;
-  LFNEntries: TLFNEntries;
+  LFNEntries: TFAT32LFNEntries;
   LastLongNameIdx: Integer;
   CurLongName: string;
   CurLongNameChkSum: Byte;
 
   NumOfClusters: Integer;
 begin
-  Result := TFileEntries.Create(StartClusterNum, PathNode);
-
   ClusterNum := StartClusterNum;
   EndOfEntry := False;
 
   HasLongName := False;
   CurLongName := '';
   CurLongNameChkSum := 0;
+
+  LastLongNameIdx := 0;
+  LFNEntryIdx := 0;
 
   NumOfClusters := 0;
 
@@ -462,32 +471,42 @@ begin
                   begin
                     if HasLongName and (CurLongNameChkSum = AsDirEntry.DIR_ChkSum) then
                     begin
+                      {$IFDEF DEBUG}
                       OutputDebugString(PChar(Format('Found File: [%s] - [%s], Cluster [%d]', [CurLongName, AsDirEntry.DIR_Name_Format83, AsDirEntry.DIR_FirstCluster])));
-                      Result.AddFileEntry(AsDirEntry, LFNEntries);
+                      {$ENDIF}
+                      FAT32EntryProc(TFAT32EntryItem.Create(AsDirEntry, LFNEntries));
                     end
                     else
                     begin
+                      {$IFDEF DEBUG}
                       OutputDebugString(PChar(Format('Found File: [%s], Cluster [%d]', [AsDirEntry.DIR_Name_Format83, AsDirEntry.DIR_FirstCluster])));
-                      Result.AddFileEntry(AsDirEntry, nil);
+                      {$ENDIF}
+                      FAT32EntryProc(TFAT32EntryItem.Create(AsDirEntry, nil));
                     end;
                   end;
               ATTR_DIRECTORY:
                   begin
                     if HasLongName then
                     begin
+                      {$IFDEF DEBUG}
                       OutputDebugString(PChar(Format('Found Dir: [%s] - [%s], Cluster [%d]', [CurLongName, AsDirEntry.DIR_Name_Format83, AsDirEntry.DIR_FirstCluster])));
-                      Result.AddFileEntry(AsDirEntry, LFNEntries);
+                      {$ENDIF}
+                      FAT32EntryProc(TFAT32EntryItem.Create(AsDirEntry, LFNEntries));
                     end
                     else
                     begin
+                      {$IFDEF DEBUG}
                       OutputDebugString(PChar(Format('Found Dir: [%s], Cluster [%d]', [AsDirEntry.DIR_Name_Format83, AsDirEntry.DIR_FirstCluster])));
-                      Result.AddFileEntry(AsDirEntry, nil);
+                      {$ENDIF}
+                      FAT32EntryProc(TFAT32EntryItem.Create(AsDirEntry, nil));
                     end;
                   end;
               ATTR_VOLUME_ID:
                   begin
+                    {$IFDEF DEBUG}
                     OutputDebugString(PChar(Format('Found Volume: [%s]', [AsDirEntry.DIR_Name_Volume])));
-                    Result.AddFileEntry(AsDirEntry, nil);
+                    {$ENDIF}
+                    FAT32EntryProc(TFAT32EntryItem.Create(AsDirEntry, nil));
                   end;
             end;
 
@@ -510,7 +529,7 @@ begin
   until EndOfEntry;
 end;
 
-function TFAT32.WriteDirEntry(FileEntries: TFileEntries): Boolean;
+function TFAT32Reader.WriteDirEntry(StartClusterNum: Cardinal; Entries: array of TFAT32EntryItem): Boolean;
 var
   i, j: Integer;
   FAT32EntryIndex: Integer;
@@ -537,11 +556,11 @@ begin
       SetLength(DirEntryCluster, DirEntriesPerCluster * SizeOf(TFAT32DirEntry));
 
       FAT32EntryIndex := 0;
-      ClusterNum := FileEntries.ClusterNum;
+      ClusterNum := StartClusterNum;
 
       // Write Dir Entries
-      for i := 0 to FileEntries.Count - 1 do
-        with FileEntries.Items[i] do
+      for i := Low(Entries) to High(Entries) do
+        with Entries[i] do
         begin
           // Write LFN Entries first...
           for j := Low(LFNEntries) to High(LFNEntries) do
@@ -577,28 +596,43 @@ begin
       if not DeviceIOControl(DiskHandle, FSCTL_UNLOCK_VOLUME, nil, 0, nil, 0, BytesReturned, nil) then
       begin
         ErrCode := GetLastError;
+        {$IFDEF DEBUG}
         OutputDebugString(PChar(Format('ERROR Unlocking VOLUME: [%d] %s', [ErrCode, GetErrorMessage(ErrCode)])));
+        {$ENDIF}
       end;
     end
   else
   begin
     ErrCode := GetLastError;
+    {$IFDEF DEBUG}
     OutputDebugString(PChar(Format('ERROR Locking VOLUME: [%d] %s', [ErrCode, GetErrorMessage(ErrCode)])));
+    {$ENDIF}
   end;
 end;
 
-function TFAT32.ReadRootDirEntry: TFileEntries;
+
+procedure TFAT32Reader.ReadDirEntry(DirEntry: TFAT32EntryItem; FAT32EntryProc: TFAT32EntryProc);
 begin
-  Result := ReadDirEntry(ROOTDIR_START_CLUSTER);
+  ReadDirEntry(DirEntry.FirstClusterNum, FAT32EntryProc);
 end;
 
-function TFAT32.WriteRootDirEntry(FileEntries: TFileEntries): Boolean;
+procedure TFAT32Reader.ReadRootDir(FAT32EntryProc: TFAT32EntryProc);
 begin
-  Result := WriteDirEntry(FileEntries);
+  ReadDirEntry(ROOTDIR_START_CLUSTER, FAT32EntryProc);
+end;
+
+function TFAT32Reader.WriteDirEntry(ParentDir: TFAT32EntryItem; Entries: array of TFAT32EntryItem): Boolean;
+begin
+  Result := WriteDirEntry(ParentDir.FirstClusterNum, Entries);
+end;
+
+function TFAT32Reader.WriteRootDirEntry(Entries: array of TFAT32EntryItem): Boolean;
+begin
+  Result := WriteDirEntry(ROOTDIR_START_CLUSTER, Entries);
 end;
 
 
-function TFAT32.GetFAT32Volume: TFAT32Volume;
+function TFAT32Reader.GetFAT32Volume: TFAT32Volume;
 begin
   Result := FFAT32Volume;
 end;
@@ -618,7 +652,7 @@ var
   i: Integer;
 begin
   for i := 0 to FItems.Count - 1 do
-    TFileEntry(FItems.Items[i]).Free;
+    TFAT32EntryItem(FItems.Items[i]).Free;
   FItems.Free;
 end;
 
@@ -627,9 +661,9 @@ begin
   Result := FItems.Count;
 end;
 
-function TFileEntries.GetFileEntry(Idx: Integer): TFileEntry;
+function TFileEntries.GetFileEntry(Idx: Integer): TFAT32EntryItem;
 begin
-  Result := TFileEntry(FItems[Idx]);
+  Result := TFAT32EntryItem(FItems[Idx]);
 end;
 
 function TFileEntries.IndexOf(const FileName: string): Integer;
@@ -638,7 +672,7 @@ var
 begin
   Result := -1;
   for i := 0 to FItems.Count - 1 do
-    if TFileEntry(FItems[i]).FileName = FileName then
+    if TFAT32EntryItem(FItems[i]).FileName = FileName then
     begin
       Result := i;
       Break;
@@ -650,7 +684,7 @@ begin
   FItems.Move(CurIndex, NewIndex);
 end;
 
-procedure TFileEntries.Move(Item: TFileEntry; NewIndex: Integer);
+procedure TFileEntries.Move(Item: TFAT32EntryItem; NewIndex: Integer);
 begin
   FItems.Move(FItems.IndexOf(Item), NewIndex);
 end;
@@ -660,7 +694,7 @@ begin
   FItems.SortList(
       function(Item1, Item2: Pointer): Integer
       begin
-        Result := Compare(TFileEntry(Item1), TFileEntry(Item2));
+        Result := Compare(TFAT32EntryItem(Item1), TFAT32EntryItem(Item2));
       end
     );
 end;
@@ -670,16 +704,16 @@ begin
   FItems.SortList(
       function(Item1, Item2: Pointer): Integer
       begin
-        Result := CompareFunc(TFileEntry(Item1), TFileEntry(Item2));
+        Result := CompareFunc(TFAT32EntryItem(Item1), TFAT32EntryItem(Item2));
       end
     );
 end;
 
-function TFileEntries.AddFileEntry(DirEntry: TFAT32DirEntry; LFNEntries: TLFNEntries): Integer;
+function TFileEntries.AddFileEntry(DirEntry: TFAT32DirEntry; LFNEntries: TFAT32LFNEntries): Integer;
 var
-  FileEntry: TFileEntry;
+  FileEntry: TFAT32EntryItem;
 begin
-  FileEntry := TFileEntry.Create(DirEntry, LFNEntries);
+  FileEntry := TFAT32EntryItem.Create(DirEntry, LFNEntries);
   Result := FItems.Add(FileEntry);
 end;
 

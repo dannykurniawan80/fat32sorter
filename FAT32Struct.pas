@@ -277,8 +277,8 @@ begin
   SetLength(Ext, 3);
   Move(DIR_Name.Name[1], Name[1], 8);
   Move(DIR_Name.Ext[1], Ext[1], 3);
-  Result := Trim(Name);
-  if Trim(Ext) <> '' then Result := Result + '.' + Trim(Ext);
+  Result := Trim(string(Name));
+  if Trim(string(Ext)) <> '' then Result := Result + '.' + Trim(string(Ext));
 end;
 
 function TFAT32DirEntry.DIR_Name_Volume: string;
@@ -287,7 +287,7 @@ var
 begin
   SetLength(Volume, 11);
   Move(DIR_Name.Raw[1], Volume[1], 11);
-  Result := Trim(Volume);
+  Result := Trim(string(Volume));
 end;
 
 function TFAT32DirEntry.DIR_WriteDateTime: TDateTime;

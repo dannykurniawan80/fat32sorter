@@ -22,6 +22,7 @@ type
     FArtist: string;
     FAlbum: string;
     FYear: Integer;
+
   public
     constructor Create(const FileName: string); overload;
     constructor Create(const Stream: TStream); overload;
@@ -161,7 +162,6 @@ end;
 
 constructor TID3.Create(const Stream: TStream);
 var
-  i: Integer;
   HeaderSize: Int64;
   Pos: Int64;
   Done: Boolean;
