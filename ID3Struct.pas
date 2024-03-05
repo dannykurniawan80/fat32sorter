@@ -1,3 +1,9 @@
+{ ============================================================================
+    File Name   : ID3Struct.pas
+    Author      : Danny Kurniawan <danny.kurniawan@gmail.com>
+    Description : ID3 Internal Structure record definitions
+    License     : GPLv3
+  ============================================================================ }
 unit ID3Struct;
 
 interface

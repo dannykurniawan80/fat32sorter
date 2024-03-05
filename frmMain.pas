@@ -1,3 +1,9 @@
+{ ============================================================================
+    File Name   : frmMain.pas
+    Author      : Danny Kurniawan <danny.kurniawan@gmail.com>
+    Description : Main Form
+    License     : GPLv3
+  ============================================================================ }
 unit frmMain;
 
 interface
@@ -5,8 +11,8 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ComCtrls,
-  FileReader, Vcl.Menus,
-  frmSort, frmRename;
+  FileReader, Vcl.Menus, System.ImageList, Vcl.ImgList,
+  frmSort, frmRename, dmShared;
 
 const
   APPLICATION_NAME = 'FAT32 Sorter';
@@ -26,6 +32,7 @@ type
     lvFolderList: TListView;
     btnReload: TButton;
     btnWriteToDisk: TButton;
+    lblNote: TLabel;
     btnQuit: TButton;
 
     procedure FormCreate(Sender: TObject);
@@ -475,10 +482,23 @@ begin
   if FileReader.Opened then
     with FileReader.CurrentDirEntries.Items[Item.Index] do
     begin
+      if IsDirectory then
+        Item.ImageIndex := 0
+      else if IsFile then
+      begin
+        if Assigned(ID3) then
+          Item.ImageIndex := 2
+        else
+          Item.ImageIndex := 1;
+      end
+      else
+        Item.ImageIndex := -1;
+
       Item.Caption := FileName;
       SizeStr := '';
 
       Item.SubItems.Append(FormatDateTime('dd-mmm-yyyy hh:nn:ss', WriteDateTime));
+      Item.SubItems.Append(FormatDateTime('dd-mmm-yyyy hh:nn:ss', CreateDateTime));
 
       if Attribute and faDirectory <> 0 then
         Item.SubItems.Append('File folder')
@@ -587,6 +607,7 @@ begin
         end;
 
         Refresh;
+        ChangeFlag := True;
       end;
     finally
       MovedItemList.Free;

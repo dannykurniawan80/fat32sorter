@@ -1,3 +1,9 @@
+{ ============================================================================
+    File Name   : ID3.pas
+    Author      : Danny Kurniawan <danny.kurniawan@gmail.com>
+    Description : ID3 functionality class
+    License     : GPLv3
+  ============================================================================ }
 unit ID3;
 
 interface

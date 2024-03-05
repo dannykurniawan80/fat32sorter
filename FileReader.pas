@@ -1,3 +1,9 @@
+{ ============================================================================
+    File Name   : FileReader.pas
+    Author      : Danny Kurniawan <danny.kurniawan@gmail.com>
+    Description : Classes to read file entries from FAT32 volumes
+    License     : GPLv3
+  ============================================================================ }
 unit FileReader;
 
 interface

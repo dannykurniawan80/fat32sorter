@@ -13,7 +13,8 @@ uses
   ID3 in 'ID3.pas',
   FileReader in 'FileReader.pas',
   FileSorter in 'FileSorter.pas',
-  uMessageDlg in 'uMessageDlg.pas';
+  uMessageDlg in 'uMessageDlg.pas',
+  dmShared in 'dmShared.pas' {SharedDataModule: TDataModule};
 
 {$R *.res}
 
@@ -22,5 +23,6 @@ begin
   Application.MainFormOnTaskbar := True;
   Application.Title := 'FAT32 Sorter';
   Application.CreateForm(TMainForm, MainForm);
+  Application.CreateForm(TSharedDataModule, SharedDataModule);
   Application.Run;
 end.

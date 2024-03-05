@@ -33,6 +33,13 @@ object MainForm: TMainForm
     Caption = 'Sort:'
     FocusControl = cbbQuickSortList
   end
+  object lblNote: TLabel
+    Left = 207
+    Top = 628
+    Width = 289
+    Height = 13
+    Caption = 'NOTE: Drag && drop files or folders to arrange them manually'
+  end
   object btnRefreshDriveList: TButton
     Left = 355
     Top = 14
@@ -60,11 +67,15 @@ object MainForm: TMainForm
     Anchors = [akLeft, akTop, akRight, akBottom]
     Columns = <
       item
-        AutoSize = True
         Caption = 'Name'
+        Width = 250
       end
       item
         Caption = 'Date Modified'
+        Width = 120
+      end
+      item
+        Caption = 'Created Date'
         Width = 120
       end
       item
@@ -104,6 +115,7 @@ object MainForm: TMainForm
     OwnerData = True
     ReadOnly = True
     RowSelect = True
+    SmallImages = SharedDataModule.imglstSmallIcons
     TabOrder = 6
     ViewStyle = vsReport
     OnData = lvFolderListData

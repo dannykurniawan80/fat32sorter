@@ -1,11 +1,17 @@
+{ ============================================================================
+    File Name   : frmRename.pas
+    Author      : Danny Kurniawan <danny.kurniawan@gmail.com>
+    Description : UI Form for renaming files
+    License     : GPLv3
+  ============================================================================ }
 unit frmRename;
 
 interface
 
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ComCtrls,
-  FileReader, Vcl.Samples.Spin;
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ComCtrls, Vcl.Samples.Spin,
+  FileReader, dmShared;
 
 type
   TRenameForm = class(TForm)
@@ -107,12 +113,25 @@ begin
   if Item <> nil then
     with TPreviewItem(PreviewList.Items[Item.Index]) do
     begin
+      if DirEntryItem.IsDirectory then
+        Item.ImageIndex := 0
+      else if DirEntryItem.IsFile then
+      begin
+        if Assigned(DirEntryItem.ID3) then
+          Item.ImageIndex := 2
+        else
+          Item.ImageIndex := 1;
+      end
+      else
+        Item.ImageIndex := -1;
+
       Item.Caption := NewFileName;
       SizeStr := '';
 
       with DirEntryItem do
       begin
         Item.SubItems.Append(FormatDateTime('dd-mmm-yyyy hh:nn:ss', WriteDateTime));
+        Item.SubItems.Append(FormatDateTime('dd-mmm-yyyy hh:nn:ss', CreateDateTime));
 
         if Attribute and faDirectory <> 0 then
           Item.SubItems.Append('File folder')

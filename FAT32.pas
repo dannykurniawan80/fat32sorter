@@ -1,3 +1,9 @@
+{ ============================================================================
+    File Name   : FAT32.pas
+    Author      : Danny Kurniawan <danny.kurniawan@gmail.com>
+    Description : FAT32 functionality classes
+    License     : GPLv3
+  ============================================================================ }
 unit FAT32;
 
 interface

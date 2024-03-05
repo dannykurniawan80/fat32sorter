@@ -1,3 +1,9 @@
+{ ============================================================================
+    File Name   : FileSorter.pas
+    Author      : Danny Kurniawan <danny.kurniawan@gmail.com>
+    Description : Comparison classes for sorting files
+    License     : GPLv3
+  ============================================================================ }
 unit FileSorter;
 
 interface

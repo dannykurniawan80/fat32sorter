@@ -1,3 +1,9 @@
+{ ============================================================================
+    File Name   : frmSort.pas
+    Author      : Danny Kurniawan <danny.kurniawan@gmail.com>
+    Description : UI Form for Advanced (custom) Sort
+    License     : GPLv3
+  ============================================================================ }
 unit frmSort;
 
 interface

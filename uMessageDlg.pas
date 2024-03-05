@@ -1,3 +1,9 @@
+{ ============================================================================
+    File Name   : uMessageDlg.pas
+    Author      : Danny Kurniawan <danny.kurniawan@gmail.com>
+    Description : Message Dialog that centered to either MainForm or custom form
+    License     : GPLv3
+  ============================================================================ }
 unit uMessageDlg;
 
 interface

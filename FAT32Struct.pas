@@ -1,3 +1,9 @@
+{ ============================================================================
+    File Name   : FAT32Struct.pas
+    Author      : Danny Kurniawan <danny.kurniawan@gmail.com>
+    Description : FAT32 Internal Structure record definitions
+    License     : GPLv3
+  ============================================================================ }
 unit FAT32Struct;
 
 interface

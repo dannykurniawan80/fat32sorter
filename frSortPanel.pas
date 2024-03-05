@@ -1,3 +1,9 @@
+{ ============================================================================
+    File Name   : frSortPanel.pas
+    Author      : Danny Kurniawan <danny.kurniawan@gmail.com>
+    Description : UI Frame for custom sort entries
+    License     : GPLv3
+  ============================================================================ }
 unit frSortPanel;
 
 interface
