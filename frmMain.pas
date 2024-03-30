@@ -59,7 +59,7 @@ type
     DriveList: TList;
     FileReader: TFileReader;
     PathEntries: TList;
-    ChangeFlag: Boolean;
+    FChangeFlag: Boolean;
 
     SortForm: TSortForm;
     RenameForm: TRenameForm;
@@ -67,10 +67,14 @@ type
     procedure ClearDriveList;
     procedure RefreshDriveList;
 
+    procedure UpdateCaption;
+
     procedure PopulateQuickSortFunctions;
     procedure ClearQuickSortFunctions;
+
+    procedure SetChangeFlag(const Value: Boolean);
   public
-    { Public declarations }
+    property ChangeFlag: Boolean read FChangeFlag write SetChangeFlag;
   end;
 
 var
@@ -274,6 +278,20 @@ begin
     end;
 end;
 
+procedure TMainForm.SetChangeFlag(const Value: Boolean);
+begin
+  FChangeFlag := Value;
+  btnWriteToDisk.Enabled := FChangeFlag;
+end;
+
+procedure TMainForm.UpdateCaption;
+begin
+  if FileReader.Opened then
+    Caption := Format('%s [%s]', [APPLICATION_NAME, FileReader.CurrentPath])
+  else
+    Caption := APPLICATION_NAME;
+end;
+
 procedure TMainForm.btnRefreshDriveListClick(Sender: TObject);
 begin
   if FileReader.Opened then
@@ -355,6 +373,7 @@ begin
     try
       FileReader.WriteCurrentDirEntries;
       ShowMessageDlg('Success!', mtInformation, [mbOk], 0);
+      ChangeFlag := False;
     except
       on E: Exception do
         ShowMessageDlg(Format('Failed! Error: [%s]', [E.Message]), mtError, [mbOk], 0);
@@ -374,8 +393,6 @@ begin
 
       cbbDriveList.Enabled := True;
       TButton(Sender).Caption := '&Open';
-
-      Caption := APPLICATION_NAME;
     end
     else
       if cbbDriveList.ItemIndex >= 0 then
@@ -388,11 +405,11 @@ begin
         cbbDriveList.Enabled := False;
         TButton(Sender).Caption := '&Close';
 
-        Caption := Format('%s [%s]', [APPLICATION_NAME, FileReader.CurrentPath]);
         ChangeFlag := False;
       end;
 
     lvFolderList.Refresh;
+    UpdateCaption;
   end;
 end;
 
@@ -455,7 +472,7 @@ begin
 
   PopulateQuickSortFunctions;
 
-  Caption := APPLICATION_NAME;
+  UpdateCaption;
   ChangeFlag := False;
 end;
 
@@ -548,7 +565,7 @@ begin
         if (SelectedName = '..') and (PrevDirName <> '') then
           lvFolderList.ItemIndex := FileReader.CurrentDirEntries.IndexOf(PrevDirName);
 
-        Caption := FileReader.CurrentPath;
+        UpdateCaption;
       end;
   end;
 end;

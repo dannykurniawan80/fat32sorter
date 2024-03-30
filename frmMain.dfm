@@ -149,6 +149,7 @@ object MainForm: TMainForm
     Height = 25
     Anchors = [akLeft, akBottom]
     Caption = 'Write to Disk'
+    Enabled = False
     TabOrder = 8
     OnClick = btnWriteToDiskClick
   end
